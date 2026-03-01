@@ -1,0 +1,327 @@
+use axum::{
+    extract::State,
+    response::sse::{Event, Sse},
+    routing::get,
+    Router,
+};
+use futures::stream::Stream;
+use nvml_wrapper::Nvml;
+use serde::Serialize;
+use std::{convert::Infallible, fs, sync::Arc, time::Duration};
+use sysinfo::{Networks, System};
+use tokio::sync::broadcast;
+use tokio_stream::wrappers::BroadcastStream;
+use tower_http::services::ServeDir;
+
+#[derive(Serialize, Clone, Debug)]
+pub struct SystemMetrics {
+    pub os_name: String,
+    pub os_version: String,
+    pub hostname: String,
+    pub uptime: u64,
+    pub cpu: CpuInfo,
+    pub mem: MemInfo,
+    pub net: NetInfo,
+    pub gpu: Option<GpuInfo>,
+    pub disk_io: DiskIoInfo,
+    pub processes: Vec<ProcessInfo>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct CpuInfo {
+    pub global_usage: f32,
+    pub cores: Vec<f32>,
+    pub brand: String,
+    pub physical_core_count: usize,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct MemInfo {
+    pub total_mem: u64,
+    pub used_mem: u64,
+    pub total_swap: u64,
+    pub used_swap: u64,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct NetInfo {
+    pub rx_bytes: u64,
+    pub tx_bytes: u64,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct GpuInfo {
+    pub name: String,
+    pub load: u32,
+    pub mem_load: u32,
+    pub temp: u32,
+    pub vram_used: u64,
+    pub vram_total: u64,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct DiskIoInfo {
+    pub read_bytes: u64,
+    pub write_bytes: u64,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct ProcessInfo {
+    pub pid: u32,
+    pub name: String,
+    pub cpu_usage: f32,
+    pub mem_usage: u64,
+    pub user: String,
+}
+
+fn get_sysfs_gpu_info() -> Option<GpuInfo> {
+    if let Ok(entries) = fs::read_dir("/sys/class/drm") {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+            if file_name.starts_with("card") && !file_name.contains('-') {
+                let device_path = path.join("device");
+                if device_path.exists() {
+                    let mut gpu = GpuInfo {
+                        name: "Unknown GPU".to_string(),
+                        load: 0,
+                        mem_load: 0,
+                        temp: 0,
+                        vram_used: 0,
+                        vram_total: 0,
+                    };
+
+                    let mut is_gpu = false;
+                    if let Ok(vendor) = fs::read_to_string(device_path.join("vendor")) {
+                        let vendor = vendor.trim();
+                        if vendor == "0x1002" {
+                            gpu.name = "AMD Radeon".to_string();
+                            is_gpu = true;
+                        } else if vendor == "0x8086" || vendor == "0x8087" {
+                            gpu.name = "Intel Graphics".to_string();
+                            is_gpu = true;
+                        } else if vendor == "0x10de" {
+                            gpu.name = "NVIDIA (nouveau)".to_string();
+                            is_gpu = true;
+                        }
+                    }
+
+                    if !is_gpu {
+                        continue;
+                    }
+
+                    if let Ok(load) = fs::read_to_string(device_path.join("gpu_busy_percent")) {
+                        gpu.load = load.trim().parse().unwrap_or(0);
+                    }
+                    if let Ok(vram_used) = fs::read_to_string(device_path.join("mem_info_vram_used")) {
+                        gpu.vram_used = vram_used.trim().parse().unwrap_or(0);
+                    }
+                    if let Ok(vram_total) = fs::read_to_string(device_path.join("mem_info_vram_total")) {
+                        gpu.vram_total = vram_total.trim().parse().unwrap_or(0);
+                    }
+                    
+                    if gpu.vram_total > 0 {
+                        gpu.mem_load = ((gpu.vram_used as f64 / gpu.vram_total as f64) * 100.0) as u32;
+                    }
+
+                    if let Ok(hwmon_entries) = fs::read_dir(device_path.join("hwmon")) {
+                        for hwmon in hwmon_entries.flatten() {
+                            if let Ok(temp1_input) = fs::read_to_string(hwmon.path().join("temp1_input")) {
+                                gpu.temp = (temp1_input.trim().parse::<u32>().unwrap_or(0)) / 1000;
+                                break;
+                            }
+                        }
+                    }
+
+                    return Some(gpu);
+                }
+            }
+        }
+    }
+    None
+}
+
+struct AppState {
+    tx: broadcast::Sender<SystemMetrics>,
+}
+
+#[tokio::main]
+async fn main() {
+    let (tx, _) = broadcast::channel::<SystemMetrics>(16);
+
+    let app_state = Arc::new(AppState { tx: tx.clone() });
+
+    // Spawn the background metrics collector
+    tokio::spawn(async move {
+        let mut sys = System::new_all();
+        let mut networks = Networks::new_with_refreshed_list();
+        
+        loop {
+            tokio::time::sleep(Duration::from_millis(1500)).await;
+
+            sys.refresh_all();
+            networks.refresh(true);
+
+            // OS
+            let os_name = System::name().unwrap_or_else(|| "Unknown".to_owned());
+            let os_version = System::os_version().unwrap_or_else(|| "Unknown".to_owned());
+            let hostname = System::host_name().unwrap_or_else(|| "Unknown".to_owned());
+            let uptime = System::uptime();
+
+            // CPU
+            let cpus = sys.cpus();
+            let global_usage = sys.global_cpu_usage();
+            let mut cores = Vec::new();
+            for cpu in cpus {
+                cores.push(cpu.cpu_usage());
+            }
+            let brand = cpus.first().map(|c| c.brand().to_string()).unwrap_or_else(|| "Unknown".to_string());
+            let physical_core_count = System::physical_core_count().unwrap_or(0);
+
+            // MEM
+            let mem = MemInfo {
+                total_mem: sys.total_memory(),
+                used_mem: sys.used_memory(),
+                total_swap: sys.total_swap(),
+                used_swap: sys.used_swap(),
+            };
+
+            // NET (Aggregate all interfaces)
+            let mut rx_bytes = 0;
+            let mut tx_bytes = 0;
+            for (_interface_name, data) in &networks {
+                rx_bytes += data.received(); // Bytes received since last refresh
+                tx_bytes += data.transmitted(); // Bytes transmistted since last refresh
+            }
+
+            // GPU
+            let mut gpu_info = None;
+            let mut nvml_success = false;
+            if let Ok(nvml) = Nvml::init() {
+                if let Ok(device) = nvml.device_by_index(0) {
+                    nvml_success = true;
+                    let name = device.name().unwrap_or_else(|_| "NVIDIA GPU".to_string());
+                    let load = device.utilization_rates().map(|u| u.gpu).unwrap_or(0);
+                    let mem_load = device.utilization_rates().map(|u| u.memory).unwrap_or(0);
+                    // the newer nvml-wrapper doesn't need enum_wrappers for temperature in some cases or its simpler, let's keep it clean
+                    let temp = device.temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu).unwrap_or(0);
+                    
+                    let memory = device.memory_info().ok();
+                    
+                    gpu_info = Some(GpuInfo {
+                        name,
+                        load,
+                        mem_load,
+                        temp,
+                        vram_used: memory.as_ref().map(|m| m.used).unwrap_or(0),
+                        vram_total: memory.as_ref().map(|m| m.total).unwrap_or(0),
+                    });
+                }
+            }
+
+            if !nvml_success {
+                // Fallback to sysfs for AMD/Intel
+                gpu_info = get_sysfs_gpu_info();
+            }
+
+            // DISK I/O (Basic implementation reading /proc/diskstats for Linux)
+            // Note: This reads cumulative sectors read/written since boot.
+            let mut disk_read_sectors = 0;
+            let mut disk_write_sectors = 0;
+
+            if let Ok(contents) = fs::read_to_string("/proc/diskstats") {
+                for line in contents.lines() {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if parts.len() >= 14 {
+                        // Looking for nvme* or sd* partitions that are the parent disk not partitions 
+                        // To simplify, we sum all physical disks
+                        let is_physical_disk = (parts[2].starts_with("sd") && parts[2].len() == 3) || 
+                                               (parts[2].starts_with("nvme") && parts[2].len() == 7);
+                                               
+                        if is_physical_disk {
+                            // field 5: sectors read, field 9: sectors written
+                            if let (Ok(r), Ok(w)) = (parts[5].parse::<u64>(), parts[9].parse::<u64>()) {
+                                disk_read_sectors += r;
+                                disk_write_sectors += w;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Assuming standard 512 byte sector size for Linux diskstats
+            let disk_io = DiskIoInfo {
+                read_bytes: disk_read_sectors * 512,
+                write_bytes: disk_write_sectors * 512,
+            };
+
+            // PROC
+            let mut processes: Vec<ProcessInfo> = sys.processes().iter().map(|(pid, proc)| {
+                ProcessInfo {
+                    pid: pid.as_u32(),
+                    name: proc.name().to_string_lossy().to_string(),
+                    cpu_usage: proc.cpu_usage(),
+                    mem_usage: proc.memory(),
+                    user: proc.user_id().map(|id| id.to_string()).unwrap_or_else(|| "root".to_string()),
+                }
+            }).collect();
+            
+            // Sort by CPU usage and get top 15
+            processes.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap());
+            processes.truncate(15);
+
+            let metrics = SystemMetrics {
+                os_name,
+                os_version,
+                hostname,
+                uptime,
+                cpu: CpuInfo {
+                    global_usage,
+                    cores,
+                    brand,
+                    physical_core_count,
+                },
+                mem,
+                net: NetInfo { rx_bytes, tx_bytes },
+                gpu: gpu_info,
+                disk_io,
+                processes,
+            };
+
+            // Send to all listeners
+            let _ = tx.send(metrics);
+        }
+    });
+
+    // Setup Axum Router
+    let app = Router::new()
+        .route("/events", get(sse_handler))
+        .fallback_service(ServeDir::new("static"))
+        .with_state(app_state);
+
+    let port = 3000;
+    let addr = format!("0.0.0.0:{}", port);
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    println!("Monitorizer Backend running on http://{}", addr);
+
+    axum::serve(listener, app).await.unwrap();
+}
+
+async fn sse_handler(
+    State(state): State<Arc<AppState>>,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    let rx = state.tx.subscribe();
+    let stream = BroadcastStream::new(rx);
+
+    let event_stream = futures::stream::StreamExt::filter_map(stream, |result| async move {
+        match result {
+            Ok(metrics) => {
+                let json = serde_json::to_string(&metrics).unwrap();
+                Some(Ok(Event::default().data(json)))
+            }
+            Err(_) => None, // receiver lagged
+        }
+    });
+
+    Sse::new(event_stream).keep_alive(axum::response::sse::KeepAlive::new())
+}

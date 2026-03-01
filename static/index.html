@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitorizer - Rust Edition</title>
+    <!-- Google Fonts for Terminal/Hacker look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=JetBrains+Mono:wght@100..800&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        b_bg: '#1a1b26',
+                        b_panel: '#24283b',
+                        b_border: '#414868',
+                        b_text: '#c0caf5',
+                        b_muted: '#565f89',
+                        b_accent_cyan: '#7dcfff',
+                        b_accent_magenta: '#bb9af7',
+                        b_accent_green: '#9ece6a',
+                        b_accent_yellow: '#e0af68',
+                        b_accent_red: '#f7768e',
+                        b_accent_blue: '#7aa2f7',
+                    },
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1b26;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #414868;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #565f89;
+        }
+
+        .progress-grad {
+            background: linear-gradient(90deg, #9ece6a, #e0af68 70%, #f7768e 100%);
+        }
+    </style>
+</head>
+
+<body class="bg-b_bg text-b_text font-mono h-screen flex flex-col overflow-hidden text-sm">
+
+    <!-- Header -->
+    <header class="flex justify-between items-center p-3 sm:px-5 bg-b_panel/50 border-b border-b_border shrink-0">
+        <div>
+            <h1 class="text-b_accent_magenta text-lg font-bold inline">Monitorizer</h1>
+            <span class="text-b_muted text-xs ml-2">v2.0 (Rust)</span>
+        </div>
+        <div class="hidden sm:block text-b_accent_blue text-xs">
+            <span id="hostname">Loading...</span> | <span id="os-distro"></span> | Uptime: <span id="uptime"></span>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+            <div id="status-dot" class="w-2.5 h-2.5 rounded-full bg-b_accent_red shadow-[0_0_8px_#f7768e]"></div>
+            <span id="status-text">Disconnected</span>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="flex-1 overflow-y-auto p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-[auto_1fr] gap-4">
+
+        <!-- CPU Panel -->
+        <section class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden">
+            <div class="flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2">
+                <h2 class="text-b_accent_cyan tracking-wider font-semibold">CPU</h2>
+                <span id="cpu-name" class="text-xs text-b_muted truncate ml-2"></span>
+            </div>
+            <div class="p-4 flex flex-col gap-4">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <span class="text-b_muted">Load</span>
+                        <div id="cpu-load" class="text-2xl text-b_accent_yellow font-bold mt-1">0.0%</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-b_muted">Cores</span>
+                        <div id="cpu-cores-count" class="text-lg text-b_text mt-1">0</div>
+                    </div>
+                </div>
+                <!-- Cores Container -->
+                <div id="cores-container" class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2">
+                    <!-- Dynamic Cores -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Memory Panel -->
+        <section class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden">
+            <div class="bg-[#414868]/30 border-b border-b_border px-3 py-2">
+                <h2 class="text-b_accent_cyan tracking-wider font-semibold">MEMORY</h2>
+            </div>
+            <div class="p-4 flex flex-col justify-center gap-5">
+                <!-- RAM -->
+                <div>
+                    <div class="flex justify-between mb-1 text-xs">
+                        <span class="text-b_accent_magenta font-bold">RAM</span>
+                        <span class="text-b_text"><span id="ram-used">0</span> / <span id="ram-total">0</span>
+                            GiB</span>
+                    </div>
+                    <div class="w-full h-3 bg-b_bg rounded-full border border-b_border overflow-hidden">
+                        <div id="ram-bar" class="h-full bg-b_accent_magenta transition-all duration-300"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+                <!-- Swap -->
+                <div>
+                    <div class="flex justify-between mb-1 text-xs">
+                        <span class="text-b_accent_yellow font-bold">SWAP</span>
+                        <span class="text-b_text"><span id="swap-used">0</span> / <span id="swap-total">0</span>
+                            GiB</span>
+                    </div>
+                    <div class="w-full h-3 bg-b_bg rounded-full border border-b_border overflow-hidden">
+                        <div id="swap-bar" class="h-full bg-b_accent_yellow transition-all duration-300"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Network Panel -->
+        <section class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden">
+            <div class="bg-[#414868]/30 border-b border-b_border px-3 py-2">
+                <h2 class="text-b_accent_cyan tracking-wider font-semibold">NETWORK & DISK I/O</h2>
+            </div>
+            <div class="p-4 flex flex-col justify-center gap-6 h-full">
+
+                <!-- Network Stats -->
+                <div>
+                    <div class="text-xs text-b_muted mb-2 tracking-wide uppercase font-semibold">Network</div>
+                    <div class="flex flex-row items-center justify-around">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl text-b_accent_cyan">▼</span>
+                            <div class="flex flex-col">
+                                <span class="text-b_muted text-xs">Download</span>
+                                <span id="net-down" class="text-lg font-bold text-b_text">0 B/s</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl text-b_accent_magenta">▲</span>
+                            <div class="flex flex-col">
+                                <span class="text-b_muted text-xs">Upload</span>
+                                <span id="net-up" class="text-lg font-bold text-b_text">0 B/s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full h-px bg-[#414868]/30"></div>
+
+                <!-- Disk IO Stats -->
+                <div>
+                    <div class="text-xs text-b_muted mb-2 tracking-wide uppercase font-semibold">Disk I/O</div>
+                    <div class="flex flex-row items-center justify-around">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl text-b_accent_green">▼</span>
+                            <div class="flex flex-col">
+                                <span class="text-b_muted text-[10px] sm:text-xs">Read</span>
+                                <span id="disk-read" class="text-base sm:text-lg font-bold text-b_text">0 B/s</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl text-b_accent_yellow">▲</span>
+                            <div class="flex flex-col">
+                                <span class="text-b_muted text-[10px] sm:text-xs">Write</span>
+                                <span id="disk-write" class="text-base sm:text-lg font-bold text-b_text">0 B/s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- GPU Panel -->
+        <section
+            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden lg:col-span-2">
+            <div class="flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2">
+                <h2 class="text-b_accent_cyan tracking-wider font-semibold">GPU</h2>
+                <span id="gpu-name" class="text-xs text-b_muted truncate ml-2">No GPU Detected</span>
+            </div>
+            <div id="gpu-content" class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 opacity-50">
+                <!-- GPU Load -->
+                <div class="flex flex-col">
+                    <span class="text-b_muted mb-1">Load</span>
+                    <div class="flex items-end gap-2">
+                        <div id="gpu-load-text" class="text-xl font-bold text-b_accent_green">0%</div>
+                    </div>
+                    <div class="w-full h-1.5 bg-b_bg rounded-full mt-2 overflow-hidden">
+                        <div id="gpu-load-bar" class="h-full bg-b_accent_green transition-all duration-300"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+                <!-- VRAM Load -->
+                <div class="flex flex-col">
+                    <span class="text-b_muted mb-1">VRAM Load</span>
+                    <div class="flex items-end gap-2">
+                        <div id="gpu-mem-text" class="text-xl font-bold text-b_accent_magenta">0%</div>
+                    </div>
+                    <div class="w-full h-1.5 bg-b_bg rounded-full mt-2 overflow-hidden">
+                        <div id="gpu-mem-bar" class="h-full bg-b_accent_magenta transition-all duration-300"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+                <!-- VRAM Usage -->
+                <div class="flex flex-col justify-center">
+                    <span class="text-b_muted mb-1 text-xs">VRAM Usage</span>
+                    <div class="text-sm font-semibold text-b_text"><span id="gpu-vram-used">0</span> / <span
+                            id="gpu-vram-total">0</span> GiB</div>
+                </div>
+                <!-- Temp -->
+                <div class="flex flex-col justify-center">
+                    <span class="text-b_muted mb-1 text-xs">Temperature</span>
+                    <div id="gpu-temp" class="text-lg font-bold text-b_accent_red">0 °C</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Processes Panel -->
+        <section
+            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden lg:col-span-2">
+            <div class="flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2">
+                <h2 class="text-b_accent_cyan tracking-wider font-semibold">PROCESSES</h2>
+                <div class="text-xs text-b_muted">Top 15 by CPU</div>
+            </div>
+            <div class="overflow-x-auto flex-1">
+                <table class="w-full text-left whitespace-nowrap">
+                    <thead class="sticky top-0 bg-b_panel text-b_accent_blue border-b border-b_border">
+                        <tr>
+                            <th class="px-3 py-2 font-normal">PID</th>
+                            <th class="px-3 py-2 font-normal">USER</th>
+                            <th class="px-3 py-2 font-normal">CPU%</th>
+                            <th class="px-3 py-2 font-normal">MEM</th>
+                            <th class="px-3 py-2 font-normal w-full">NAME</th>
+                        </tr>
+                    </thead>
+                    <tbody id="proc-body" class="text-xs">
+                        <!-- Process Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // DOM Elements
+        const el = (id) => document.getElementById(id);
+
+        // Formatters
+        const formatBytes = (bytes, decimals = 2) => {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        };
+        const formatGiB = (bytes) => (bytes / 1024 / 1024 / 1024).toFixed(2);
+        const formatUptime = (seconds) => {
+            const d = Math.floor(seconds / (3600 * 24));
+            const h = Math.floor(seconds % (3600 * 24) / 3600);
+            const m = Math.floor(seconds % 3600 / 60);
+            return `${d}d ${h}h ${m}m`;
+        };
+
+        // Network speed calculation state
+        let lastNet = { rx: 0, tx: 0, drx: 0, dtx: 0, time: Date.now() };
+        let isFirstData = true;
+
+        // Establish SSE Connection
+        const evtSource = new EventSource('/events');
+
+        evtSource.onopen = () => {
+            el('status-dot').className = 'w-2.5 h-2.5 rounded-full bg-b_accent_green shadow-[0_0_8px_#9ece6a]';
+            el('status-text').textContent = 'Connected';
+        };
+
+        evtSource.onerror = () => {
+            el('status-dot').className = 'w-2.5 h-2.5 rounded-full bg-b_accent_red shadow-[0_0_8px_#f7768e]';
+            el('status-text').textContent = 'Reconnecting...';
+        };
+
+        evtSource.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+
+            // Header Info
+            el('hostname').textContent = data.hostname;
+            el('os-distro').textContent = `${data.os_name} ${data.os_version}`;
+            el('uptime').textContent = formatUptime(data.uptime);
+
+            // CPU Info
+            el('cpu-name').textContent = data.cpu.brand;
+            el('cpu-load').textContent = data.cpu.global_usage.toFixed(1) + '%';
+            el('cpu-cores-count').textContent = data.cpu.physical_core_count;
+
+            const coresContainer = el('cores-container');
+            if (coresContainer.children.length !== data.cpu.cores.length) {
+                coresContainer.innerHTML = '';
+                data.cpu.cores.forEach((load, i) => {
+                    coresContainer.insertAdjacentHTML('beforeend', `
+                        <div class="flex flex-col text-[10px] mt-1">
+                            <div class="flex justify-between text-b_muted mb-0.5">
+                                <span>Core ${i}</span>
+                                <span id="core-val-${i}" class="text-b_accent_green">${load.toFixed(1)}%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-b_bg rounded-full overflow-hidden">
+                                <div id="core-bar-${i}" class="h-full progress-grad transition-all duration-300" style="width: ${load}%"></div>
+                            </div>
+                        </div>
+                    `);
+                });
+            } else {
+                data.cpu.cores.forEach((load, i) => {
+                    el(`core-val-${i}`).textContent = load.toFixed(1) + '%';
+                    el(`core-bar-${i}`).style.width = Math.min(load, 100) + '%';
+                });
+            }
+
+            // Memory Info
+            el('ram-used').textContent = formatGiB(data.mem.used_mem);
+            el('ram-total').textContent = formatGiB(data.mem.total_mem);
+            el('ram-bar').style.width = (data.mem.used_mem / data.mem.total_mem * 100) + '%';
+
+            el('swap-used').textContent = formatGiB(data.mem.used_swap);
+            el('swap-total').textContent = formatGiB(data.mem.total_swap);
+            el('swap-bar').style.width = data.mem.total_swap > 0 ? (data.mem.used_swap / data.mem.total_swap * 100) + '%' : '0%';
+
+            // Network Speed & Disk I/O Calculation
+            const now = Date.now();
+            if (!isFirstData) {
+                const timeDiff = (now - lastNet.time) / 1000; // seconds
+
+                // Net 
+                const rxSpeed = Math.max(0, (data.net.rx_bytes - lastNet.rx) / timeDiff);
+                const txSpeed = Math.max(0, (data.net.tx_bytes - lastNet.tx) / timeDiff);
+                el('net-down').textContent = formatBytes(rxSpeed) + '/s';
+                el('net-up').textContent = formatBytes(txSpeed) + '/s';
+
+                // Disk
+                const drxSpeed = Math.max(0, (data.disk_io.read_bytes - lastNet.drx) / timeDiff);
+                const dtxSpeed = Math.max(0, (data.disk_io.write_bytes - lastNet.dtx) / timeDiff);
+                el('disk-read').textContent = formatBytes(drxSpeed) + '/s';
+                el('disk-write').textContent = formatBytes(dtxSpeed) + '/s';
+            }
+            lastNet = {
+                rx: data.net.rx_bytes,
+                tx: data.net.tx_bytes,
+                drx: data.disk_io.read_bytes,
+                dtx: data.disk_io.write_bytes,
+                time: now
+            };
+            isFirstData = false;
+
+            // GPU Panel update
+            if (data.gpu) {
+                el('gpu-content').classList.remove('opacity-50');
+                el('gpu-name').textContent = data.gpu.name;
+
+                el('gpu-load-text').textContent = data.gpu.load + '%';
+                el('gpu-load-bar').style.width = data.gpu.load + '%';
+
+                el('gpu-mem-text').textContent = data.gpu.mem_load + '%';
+                el('gpu-mem-bar').style.width = data.gpu.mem_load + '%';
+
+                el('gpu-vram-used').textContent = formatGiB(data.gpu.vram_used);
+                el('gpu-vram-total').textContent = formatGiB(data.gpu.vram_total);
+                el('gpu-temp').textContent = data.gpu.temp + ' °C';
+            }
+
+            // Processes Table
+            const tbody = el('proc-body');
+            tbody.innerHTML = '';
+            data.processes.forEach(p => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="hover:bg-[#414868]/30 transition-colors border-b border-[#414868]/30 border-dashed">
+                        <td class="px-3 py-1.5 text-b_accent_yellow">${p.pid}</td>
+                        <td class="px-3 py-1.5 text-b_muted">${p.user}</td>
+                        <td class="px-3 py-1.5">${p.cpu_usage.toFixed(1)}</td>
+                        <td class="px-3 py-1.5">${formatBytes(p.mem_usage)}</td>
+                        <td class="px-3 py-1.5 text-b_accent_cyan font-semibold truncate max-w-[200px]">${p.name}</td>
+                    </tr>
+                `);
+            });
+        };
+    </script>
+</body>
+
+</html>

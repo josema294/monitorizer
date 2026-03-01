@@ -66,6 +66,10 @@
             display: none;
         }
 
+        .panel-minimized .panel-header {
+            border-bottom: none;
+        }
+
         .toggle-btn {
             cursor: pointer;
             transition: transform 0.3s ease;
@@ -95,12 +99,13 @@
     </header>
 
     <!-- Main Grid -->
-    <main class="flex-1 overflow-y-auto p-3 sm:p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-min">
+    <main
+        class="flex-1 overflow-y-auto p-3 sm:p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-min items-start">
 
         <!-- CPU Panel -->
         <section id="panel-cpu"
             class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300">
-            <div class="flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
+            <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-cpu')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
@@ -129,7 +134,7 @@
         <!-- Memory Panel -->
         <section id="panel-mem"
             class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300">
-            <div class="flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
+            <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-mem')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
@@ -167,7 +172,7 @@
         <!-- Network Panel -->
         <section id="panel-net"
             class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300">
-            <div class="flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
+            <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-net')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
@@ -226,7 +231,7 @@
         <!-- GPU Panel -->
         <section id="panel-gpu"
             class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden md:col-span-2 xl:col-span-1 border-b_border transition-all duration-300">
-            <div class="flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
+            <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-gpu')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
@@ -274,23 +279,29 @@
         <!-- Processes Panel -->
         <section id="panel-proc"
             class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden md:col-span-2 xl:col-span-2 transition-all duration-300">
-            <div class="flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
+            <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-proc')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
                     <h2 class="text-b_accent_cyan tracking-wider font-semibold">PROCESSES</h2>
                 </div>
-                <div class="text-[10px] text-b_muted">Top 15 CPU</div>
+                <div class="text-[10px] text-b_muted">Top 50 CPU</div>
             </div>
-            <div class="panel-content overflow-x-auto flex-1">
+            <div class="panel-content overflow-auto flex-1 max-h-[400px]">
                 <table class="w-full text-left whitespace-nowrap">
-                    <thead class="sticky top-0 bg-b_panel text-b_accent_blue border-b border-b_border">
+                    <thead
+                        class="sticky top-0 bg-b_panel text-b_accent_blue border-b border-b_border text-[10px] sm:text-xs">
                         <tr>
-                            <th class="px-3 py-2 font-normal">PID</th>
-                            <th class="px-3 py-2 font-normal">USER</th>
-                            <th class="px-3 py-2 font-normal">CPU%</th>
-                            <th class="px-3 py-2 font-normal">MEM</th>
-                            <th class="px-3 py-2 font-normal w-full">NAME</th>
+                            <th class="px-3 py-2 font-normal cursor-pointer hover:bg-b_border/30"
+                                onclick="setSort('pid')">PID <span id="sort-pid"></span></th>
+                            <th class="px-3 py-2 font-normal cursor-pointer hover:bg-b_border/30"
+                                onclick="setSort('user')">USER <span id="sort-user"></span></th>
+                            <th class="px-3 py-2 font-normal cursor-pointer hover:bg-b_border/30"
+                                onclick="setSort('cpu_usage')">CPU% <span id="sort-cpu_usage"></span></th>
+                            <th class="px-3 py-2 font-normal cursor-pointer hover:bg-b_border/30"
+                                onclick="setSort('mem_usage')">MEM <span id="sort-mem_usage"></span></th>
+                            <th class="px-3 py-2 font-normal w-full cursor-pointer hover:bg-b_border/30"
+                                onclick="setSort('name')">NAME <span id="sort-name"></span></th>
                         </tr>
                     </thead>
                     <tbody id="proc-body" class="text-xs">
@@ -306,10 +317,39 @@
         // DOM Elements
         const el = (id) => document.getElementById(id);
 
+        // State
+        let sortKey = 'cpu_usage';
+        let sortOrder = -1; // -1 for desc, 1 for asc
+
         // Interaction
         const togglePanel = (id) => {
             el(id).classList.toggle('panel-minimized');
         };
+
+        const setSort = (key) => {
+            if (sortKey === key) {
+                sortOrder *= -1;
+            } else {
+                sortKey = key;
+                sortOrder = -1;
+            }
+            updateSortIndicators();
+        };
+
+        const updateSortIndicators = () => {
+            ['pid', 'user', 'cpu_usage', 'mem_usage', 'name'].forEach(k => {
+                const indicator = el(`sort-${k}`);
+                if (k === sortKey) {
+                    indicator.textContent = sortOrder === 1 ? '▲' : '▼';
+                    indicator.className = 'text-b_accent_cyan ml-1';
+                } else {
+                    indicator.textContent = '';
+                }
+            });
+        };
+
+        // Initialize sorting indicators
+        setTimeout(updateSortIndicators, 100);
 
         // Formatters
         const formatBytes = (bytes, decimals = 2) => {
@@ -435,14 +475,26 @@
             // Processes Table
             const tbody = el('proc-body');
             tbody.innerHTML = '';
-            data.processes.forEach(p => {
+
+            // Apply Client-side sorting
+            const sortedProcesses = [...data.processes].sort((a, b) => {
+                let valA = a[sortKey];
+                let valB = b[sortKey];
+
+                if (typeof valA === 'string') {
+                    return valA.localeCompare(valB) * sortOrder;
+                }
+                return (valA - valB) * sortOrder;
+            });
+
+            sortedProcesses.forEach(p => {
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr class="hover:bg-[#414868]/30 transition-colors border-b border-[#414868]/30 border-dashed">
                         <td class="px-3 py-1.5 text-b_accent_yellow">${p.pid}</td>
                         <td class="px-3 py-1.5 text-b_muted">${p.user}</td>
-                        <td class="px-3 py-1.5">${p.cpu_usage.toFixed(1)}</td>
+                        <td class="px-3 py-1.5 font-bold">${p.cpu_usage.toFixed(1)}%</td>
                         <td class="px-3 py-1.5">${formatBytes(p.mem_usage)}</td>
-                        <td class="px-3 py-1.5 text-b_accent_cyan font-semibold truncate max-w-[200px]">${p.name}</td>
+                        <td class="px-3 py-1.5 text-b_accent_cyan font-semibold truncate max-w-[150px] sm:max-w-none">${p.name}</td>
                     </tr>
                 `);
             });

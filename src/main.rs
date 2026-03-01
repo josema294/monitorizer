@@ -266,9 +266,9 @@ async fn main() {
                 }
             }).collect();
             
-            // Sort by CPU usage and get top 15
+            // Sort by CPU usage and get top 50
             processes.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap());
-            processes.truncate(15);
+            processes.truncate(50);
 
             let metrics = SystemMetrics {
                 os_name,

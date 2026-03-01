@@ -60,6 +60,7 @@ pub struct GpuInfo {
     pub load: u32,
     pub mem_load: u32,
     pub temp: u32,
+    pub power_w: u32,
     pub vram_used: u64,
     pub vram_total: u64,
 }
@@ -92,6 +93,7 @@ fn get_sysfs_gpu_info() -> Option<GpuInfo> {
                         load: 0,
                         mem_load: 0,
                         temp: 0,
+                        power_w: 0,
                         vram_used: 0,
                         vram_total: 0,
                     };
@@ -131,9 +133,14 @@ fn get_sysfs_gpu_info() -> Option<GpuInfo> {
 
                     if let Ok(hwmon_entries) = fs::read_dir(device_path.join("hwmon")) {
                         for hwmon in hwmon_entries.flatten() {
-                            if let Ok(temp1_input) = fs::read_to_string(hwmon.path().join("temp1_input")) {
+                            let hwmon_path = hwmon.path();
+                            if let Ok(temp1_input) = fs::read_to_string(hwmon_path.join("temp1_input")) {
                                 gpu.temp = (temp1_input.trim().parse::<u32>().unwrap_or(0)) / 1000;
-                                break;
+                            }
+                            if let Ok(power_input) = fs::read_to_string(hwmon_path.join("power1_average")) {
+                                gpu.power_w = (power_input.trim().parse::<u32>().unwrap_or(0)) / 1_000_000;
+                            } else if let Ok(power_input) = fs::read_to_string(hwmon_path.join("power1_input")) {
+                                gpu.power_w = (power_input.trim().parse::<u32>().unwrap_or(0)) / 1_000_000;
                             }
                         }
                     }
@@ -280,6 +287,7 @@ async fn main() {
                     // the newer nvml-wrapper doesn't need enum_wrappers for temperature in some cases or its simpler, let's keep it clean
                     let temp = device.temperature(nvml_wrapper::enum_wrappers::device::TemperatureSensor::Gpu).unwrap_or(0);
                     
+                    let power = device.power_usage().unwrap_or(0) / 1000; // milliwatts to watts
                     let memory = device.memory_info().ok();
                     
                     gpu_info = Some(GpuInfo {
@@ -287,6 +295,7 @@ async fn main() {
                         load,
                         mem_load,
                         temp,
+                        power_w: power as u32,
                         vram_used: memory.as_ref().map(|m| m.used).unwrap_or(0),
                         vram_total: memory.as_ref().map(|m| m.total).unwrap_or(0),
                     });

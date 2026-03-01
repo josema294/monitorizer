@@ -247,39 +247,42 @@
                 </div>
                 <span id="gpu-name" class="text-[10px] text-b_muted truncate ml-2 max-w-[150px]">No GPU Detected</span>
             </div>
-            <div id="gpu-content" class="panel-content p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 opacity-50 flex-1">
-                <!-- GPU Load -->
-                <div class="flex flex-col">
-                    <span class="text-b_muted mb-1">Load</span>
-                    <div class="flex items-end gap-2">
-                        <div id="gpu-load-text" class="text-xl font-bold text-b_accent_green">0%</div>
+            <div id="gpu-content" class="panel-content p-4 flex flex-col gap-4 opacity-50 flex-1">
+                <!-- GPU Usage Row -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-end">
+                        <span class="text-b_text font-bold text-xs">Utilization</span>
+                        <div class="flex gap-3 text-xs">
+                            <span id="gpu-temp" class="text-b_accent_red font-bold">0°C</span>
+                            <span id="gpu-power" class="text-b_accent_yellow font-bold">0W</span>
+                            <span id="gpu-load-text" class="text-b_accent_green font-bold text-sm">0%</span>
+                        </div>
                     </div>
-                    <div class="w-full h-1.5 bg-b_bg rounded-full mt-2 overflow-hidden">
+                    <div class="w-full h-3 bg-b_bg rounded-full border border-b_border overflow-hidden">
                         <div id="gpu-load-bar" class="h-full bg-b_accent_green transition-all duration-300"
                             style="width: 0%"></div>
                     </div>
                 </div>
-                <!-- VRAM Load -->
-                <div class="flex flex-col">
-                    <span class="text-b_muted mb-1">VRAM Load</span>
-                    <div class="flex items-end gap-2">
-                        <div id="gpu-mem-text" class="text-xl font-bold text-b_accent_magenta">0%</div>
+
+                <div class="w-full h-px bg-b_border/30"></div>
+
+                <!-- VRAM Section -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-end">
+                        <span class="text-b_text font-bold text-xs uppercase tracking-tight">VRAM</span>
+                        <div class="flex gap-2 text-[10px] items-baseline">
+                            <span id="gpu-vram-perc" class="text-b_accent_magenta font-bold text-sm">0%</span>
+                            <span class="text-b_muted">Used</span>
+                        </div>
                     </div>
-                    <div class="w-full h-1.5 bg-b_bg rounded-full mt-2 overflow-hidden">
+                    <div class="w-full h-3 bg-b_bg rounded-full border border-b_border overflow-hidden">
                         <div id="gpu-mem-bar" class="h-full bg-b_accent_magenta transition-all duration-300"
                             style="width: 0%"></div>
                     </div>
-                </div>
-                <!-- VRAM Usage -->
-                <div class="flex flex-col justify-center">
-                    <span class="text-b_muted mb-1 text-xs">VRAM Usage</span>
-                    <div class="text-sm font-semibold text-b_text"><span id="gpu-vram-used">0</span> / <span
-                            id="gpu-vram-total">0</span> GiB</div>
-                </div>
-                <!-- Temp -->
-                <div class="flex flex-col justify-center">
-                    <span class="text-b_muted mb-1 text-xs">Temperature</span>
-                    <div id="gpu-temp" class="text-lg font-bold text-b_accent_red">0 °C</div>
+                    <div class="flex justify-between text-[10px] text-b_muted font-mono">
+                        <div>Used: <span id="gpu-vram-used" class="text-b_text">0</span> GiB</div>
+                        <div>Total: <span id="gpu-vram-total" class="text-b_text">0</span> GiB</div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -499,12 +502,13 @@
                 el('gpu-load-text').textContent = data.gpu.load + '%';
                 el('gpu-load-bar').style.width = data.gpu.load + '%';
 
-                el('gpu-mem-text').textContent = data.gpu.mem_load + '%';
+                el('gpu-vram-perc').textContent = data.gpu.mem_load + '%';
                 el('gpu-mem-bar').style.width = data.gpu.mem_load + '%';
 
                 el('gpu-vram-used').textContent = formatGiB(data.gpu.vram_used);
                 el('gpu-vram-total').textContent = formatGiB(data.gpu.vram_total);
-                el('gpu-temp').textContent = data.gpu.temp + ' °C';
+                el('gpu-temp').textContent = data.gpu.temp + '°C';
+                el('gpu-power').textContent = data.gpu.power_w + 'W';
             }
 
             // Processes Table

@@ -78,6 +78,31 @@
         .panel-minimized .toggle-btn {
             transform: rotate(-90deg);
         }
+
+        /* Drag and Drop styling */
+        .panel-draggable.dragging {
+            opacity: 0.4;
+            border: 2px dashed #7aa2f7;
+            transform: scale(0.98);
+        }
+
+        .panel-draggable.drag-over {
+            border: 2px dashed #9ece6a;
+            box-shadow: 0 0 15px rgba(158, 206, 106, 0.4);
+        }
+
+        section[draggable="true"] .panel-header {
+            cursor: grab;
+        }
+
+        section[draggable="true"] .panel-header:active {
+            cursor: grabbing;
+        }
+
+        /* Settings Modal styling */
+        #settings-modal.show {
+            display: flex;
+        }
     </style>
 </head>
 
@@ -93,6 +118,12 @@
             <span id="hostname">Loading...</span> | <span id="os-distro"></span> | Uptime: <span id="uptime"></span>
         </div>
         <div class="flex items-center gap-2 text-xs">
+            <!-- Settings Toggle -->
+            <button onclick="document.getElementById('settings-modal').classList.add('show')"
+                class="text-b_muted hover:text-b_text transition-colors mr-2 cursor-pointer focus:outline-none"
+                title="Settings">
+                ⚙️
+            </button>
             <div id="status-dot" class="w-2.5 h-2.5 rounded-full bg-b_accent_red shadow-[0_0_8px_#f7768e]"></div>
             <span id="status-text">Disconnected</span>
         </div>
@@ -103,8 +134,8 @@
         class="flex-1 overflow-y-auto p-3 sm:p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 auto-rows-min items-stretch">
 
         <!-- CPU Panel -->
-        <section id="panel-cpu"
-            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300">
+        <section id="panel-cpu" draggable="true"
+            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300 panel-draggable">
             <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-cpu')">
                 <div class="flex items-center gap-2">
@@ -140,8 +171,8 @@
         </section>
 
         <!-- Memory Panel -->
-        <section id="panel-mem"
-            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300">
+        <section id="panel-mem" draggable="true"
+            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300 panel-draggable">
             <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-mem')">
                 <div class="flex items-center gap-2">
@@ -178,8 +209,8 @@
         </section>
 
         <!-- Network Panel -->
-        <section id="panel-net"
-            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300">
+        <section id="panel-net" draggable="true"
+            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300 panel-draggable">
             <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-net')">
                 <div class="flex items-center gap-2">
@@ -237,8 +268,8 @@
         </section>
 
         <!-- GPU Panel -->
-        <section id="panel-gpu"
-            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden md:col-span-2 xl:col-span-1 border-b_border transition-all duration-300">
+        <section id="panel-gpu" draggable="true"
+            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden transition-all duration-300 panel-draggable">
             <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-gpu')">
                 <div class="flex items-center gap-2">
@@ -288,8 +319,8 @@
         </section>
 
         <!-- Processes Panel -->
-        <section id="panel-proc"
-            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden md:col-span-2 xl:col-span-2 transition-all duration-300">
+        <section id="panel-proc" draggable="true"
+            class="bg-b_panel border border-b_border rounded-lg flex flex-col shadow-lg overflow-hidden md:col-span-2 xl:col-span-2 transition-all duration-300 panel-draggable">
             <div class="panel-header flex justify-between items-center bg-[#414868]/30 border-b border-b_border px-3 py-2 cursor-pointer select-none"
                 onclick="togglePanel('panel-proc')">
                 <div class="flex items-center gap-2">
@@ -552,7 +583,259 @@
             }
             tbody.innerHTML = html;
         };
+
+        // Initialize Drag and Drop Tiling System
+        const initDragAndDrop = () => {
+            const panels = document.querySelectorAll('.panel-draggable');
+            const container = document.querySelector('main');
+
+            // Restore saved layout
+            const savedOrder = JSON.parse(localStorage.getItem('wtop_panel_order') || '[]');
+            if (savedOrder.length > 0) {
+                // Reorder DOM elements based on saved IDs
+                savedOrder.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) container.appendChild(el);
+                });
+            }
+
+            let draggedEl = null;
+
+            panels.forEach(panel => {
+                panel.addEventListener('dragstart', function (e) {
+                    // Fix to prevent drag from starting when filtering / clicking table
+                    if ((e.target.tagName && ['th', 'td', 'tr'].includes(e.target.tagName.toLowerCase())) || e.target.closest('table')) {
+                        e.preventDefault();
+                        return;
+                    }
+                    draggedEl = this;
+                    setTimeout(() => this.classList.add('dragging'), 10);
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', this.id);
+                });
+
+                panel.addEventListener('dragend', function () {
+                    this.classList.remove('dragging');
+                    draggedEl = null;
+                    const currentOrder = Array.from(container.querySelectorAll('.panel-draggable')).map(el => el.id);
+                    localStorage.setItem('wtop_panel_order', JSON.stringify(currentOrder));
+                });
+
+                panel.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                    if (this !== draggedEl) {
+                        this.classList.add('drag-over');
+                    }
+                });
+
+                panel.addEventListener('dragleave', function () {
+                    this.classList.remove('drag-over');
+                });
+
+                panel.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+                    if (this !== draggedEl && draggedEl) {
+                        const bounding = this.getBoundingClientRect();
+                        const offset = bounding.y + (bounding.height / 2);
+                        if (e.clientY - offset > 0) {
+                            this.insertAdjacentElement('afterend', draggedEl);
+                        } else {
+                            this.insertAdjacentElement('beforebegin', draggedEl);
+                        }
+                    }
+                });
+            });
+        };
+        setTimeout(initDragAndDrop, 150);
+
+        // --- Settings Modal Logic --- //
+        const SETTINGS_KEY = 'wtop_settings';
+        const defaultSettings = {
+            visibility: { cpu: true, mem: true, net: true, gpu: true, proc: true },
+            theme: 'default', // default | light
+            sampleRate: 1000,
+            compact: false
+        };
+
+        const loadSettings = () => {
+            try {
+                return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || defaultSettings;
+            } catch {
+                return defaultSettings;
+            }
+        };
+
+        const updateSettingsUI = (cfg) => {
+            // Update inputs
+            document.getElementById('vis-cpu').checked = cfg.visibility.cpu;
+            document.getElementById('vis-mem').checked = cfg.visibility.mem;
+            document.getElementById('vis-net').checked = cfg.visibility.net;
+            document.getElementById('vis-gpu').checked = cfg.visibility.gpu;
+            document.getElementById('vis-proc').checked = cfg.visibility.proc;
+
+            document.getElementById('theme-select').value = cfg.theme;
+            document.getElementById('sample-rate').value = cfg.sampleRate;
+            document.getElementById('opt-compact').checked = cfg.compact;
+        };
+
+        const applySettings = (cfg) => {
+            // Apply Visibility
+            const panels = { cpu: 'panel-cpu', mem: 'panel-mem', net: 'panel-net', gpu: 'panel-gpu', proc: 'panel-proc' };
+            Object.entries(cfg.visibility).forEach(([key, visible]) => {
+                const el = document.getElementById(panels[key]);
+                if (el) {
+                    if (visible) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                }
+            });
+
+            // Apply Theme
+            if (cfg.theme === 'light') {
+                document.body.classList.add('bg-gray-100', 'text-gray-900');
+                document.body.classList.remove('bg-b_bg', 'text-b_text');
+            } else {
+                document.body.classList.remove('bg-gray-100', 'text-gray-900');
+                document.body.classList.add('bg-b_bg', 'text-b_text');
+            }
+
+            // Apply Compact
+            const main = document.querySelector('main');
+            if (cfg.compact) {
+                main.classList.replace('gap-4', 'gap-2');
+                main.classList.replace('p-5', 'p-2');
+            } else {
+                main.classList.replace('gap-2', 'gap-4');
+                main.classList.replace('p-2', 'p-5');
+            }
+        };
+
+        const saveSettings = () => {
+            const cfg = {
+                visibility: {
+                    cpu: document.getElementById('vis-cpu').checked,
+                    mem: document.getElementById('vis-mem').checked,
+                    net: document.getElementById('vis-net').checked,
+                    gpu: document.getElementById('vis-gpu').checked,
+                    proc: document.getElementById('vis-proc').checked,
+                },
+                theme: document.getElementById('theme-select').value,
+                sampleRate: parseInt(document.getElementById('sample-rate').value) || 1000,
+                compact: document.getElementById('opt-compact').checked
+            };
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg));
+            applySettings(cfg);
+        };
+
+        // Tab Switching
+        const switchTab = (tabId) => {
+            document.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('text-b_accent_cyan', 'border-b-2', 'border-b_accent_cyan'));
+            document.querySelectorAll('.settings-content').forEach(c => c.classList.add('hidden'));
+
+            const activeBtn = Array.from(document.querySelectorAll('.settings-tab-btn')).find(b => b.dataset.target === tabId);
+            if (activeBtn) activeBtn.classList.add('text-b_accent_cyan', 'border-b-2', 'border-b_accent_cyan');
+
+            const activeContent = document.getElementById(tabId);
+            if (activeContent) activeContent.classList.remove('hidden');
+        };
+
+        // Attach listeners
+        document.querySelectorAll('.settings-input').forEach(el => el.addEventListener('change', saveSettings));
+
+        // Initial Load
+        const currentCfg = loadSettings();
+        updateSettingsUI(currentCfg);
+        applySettings(currentCfg);
+
     </script>
+
+    <!-- Settings Modal HTML -->
+    <div id="settings-modal"
+        class="hidden fixed inset-0 z-50 bg-[#1a1b26]/80 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-b_panel border border-b_border rounded-lg shadow-2xl w-full max-w-xl max-h-[80vh] flex flex-col overflow-hidden">
+
+            <div class="flex justify-between items-center p-4 border-b border-b_border">
+                <h2 class="text-lg font-bold text-b_accent_magenta tracking-wide">⚙️ Settings</h2>
+                <button onclick="document.getElementById('settings-modal').classList.remove('show')"
+                    class="text-b_muted hover:text-b_accent_red text-lg">&times;</button>
+            </div>
+
+            <div class="flex flex-1 overflow-hidden flex-col sm:flex-row">
+
+                <!-- Sidebar Tabs -->
+                <nav
+                    class="w-full sm:w-1/3 border-b sm:border-b-0 sm:border-r border-b_border bg-[#1a1b26]/50 flex flex-row sm:flex-col overflow-x-auto text-sm">
+                    <button data-target="tab-menu" onclick="switchTab('tab-menu')"
+                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_text whitespace-nowrap text-b_accent_cyan border-b-2 sm:border-b-0 border-b_accent_cyan sm:border-r-2 transition-colors">Menú
+                        Visibilidad</button>
+                    <button data-target="tab-style" onclick="switchTab('tab-style')"
+                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_muted whitespace-nowrap transition-colors">Estilos</button>
+                    <button data-target="tab-monitor" onclick="switchTab('tab-monitor')"
+                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_muted whitespace-nowrap transition-colors">Monitorización</button>
+                    <button data-target="tab-other" onclick="switchTab('tab-other')"
+                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_muted whitespace-nowrap transition-colors">Otros</button>
+                </nav>
+
+                <!-- Tab Contents -->
+                <div class="p-5 flex-1 overflow-y-auto text-sm">
+
+                    <div id="tab-menu" class="settings-content flex flex-col gap-3">
+                        <h3 class="text-b_accent_cyan font-bold mb-2">Panel Visibility</h3>
+                        <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-cpu"
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo CPU</label>
+                        <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-mem"
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo
+                            Memoria</label>
+                        <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-net"
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo
+                            Red/Disco</label>
+                        <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-gpu"
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo GPU</label>
+                        <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-proc"
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo
+                            Procesos</label>
+                    </div>
+
+                    <div id="tab-style" class="settings-content hidden flex flex-col gap-4">
+                        <h3 class="text-b_accent_cyan font-bold mb-2">Appearance</h3>
+                        <div>
+                            <label class="block text-b_muted text-xs mb-1">Theme</label>
+                            <select id="theme-select"
+                                class="settings-input w-full bg-b_bg border border-b_border text-b_text rounded px-3 py-2 outline-none">
+                                <option value="default">Default Dark (Tokyo Night)</option>
+                                <option value="light">Light Mode (Base)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="tab-monitor" class="settings-content hidden flex flex-col gap-4">
+                        <h3 class="text-b_accent_cyan font-bold mb-2">Data Polling</h3>
+                        <div>
+                            <label class="block text-b_muted text-xs mb-1">Frontend Update Interval (ms)</label>
+                            <input type="number" id="sample-rate"
+                                class="settings-input w-full bg-b_bg border border-b_border text-b_text rounded px-3 py-2 outline-none"
+                                min="500" max="10000" step="100">
+                            <p class="text-[10px] text-b_muted mt-1">Changes are client-side. The backend streams data
+                                independently over SSE.</p>
+                        </div>
+                    </div>
+
+                    <div id="tab-other" class="settings-content hidden flex flex-col gap-3">
+                        <h3 class="text-b_accent_cyan font-bold mb-2">Miscellaneous UI Options</h3>
+                        <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="opt-compact"
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> Modo Compacto (reduce
+                            márgenes)</label>
+                    </div>
+
+                </div>
+            </div>
+            <div class="p-3 border-t border-b_border bg-[#1a1b26]/50 flex justify-end text-xs">
+                <button onclick="document.getElementById('settings-modal').classList.remove('show')"
+                    class="px-4 py-2 bg-b_border hover:bg-b_muted transition-colors rounded text-b_text">Cerrar</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

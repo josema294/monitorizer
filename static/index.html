@@ -103,6 +103,40 @@
         #settings-modal.show {
             display: flex;
         }
+
+        /* Light Theme Variations */
+        body.theme-light {
+            --tw-bg-opacity: 1;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .theme-light .bg-b_panel,
+        .theme-light.bg-b_panel {
+            background-color: #ffffff !important;
+        }
+
+        .theme-light .border-b_border,
+        .theme-light.border-b_border {
+            border-color: #e5e7eb !important;
+        }
+
+        .theme-light .text-b_text {
+            color: #111827 !important;
+        }
+
+        .theme-light .text-b_muted {
+            color: #6b7280 !important;
+        }
+
+        .theme-light .panel-header {
+            background-color: #f9fafb !important;
+        }
+
+        .theme-light .bg-b_bg,
+        .theme-light.bg-b_bg {
+            background-color: #e5e7eb !important;
+        }
     </style>
 </head>
 
@@ -692,11 +726,9 @@
 
             // Apply Theme
             if (cfg.theme === 'light') {
-                document.body.classList.add('bg-gray-100', 'text-gray-900');
-                document.body.classList.remove('bg-b_bg', 'text-b_text');
+                document.body.classList.add('theme-light');
             } else {
-                document.body.classList.remove('bg-gray-100', 'text-gray-900');
-                document.body.classList.add('bg-b_bg', 'text-b_text');
+                document.body.classList.remove('theme-light');
             }
 
             // Apply Compact
@@ -739,13 +771,16 @@
             if (activeContent) activeContent.classList.remove('hidden');
         };
 
-        // Attach listeners
-        document.querySelectorAll('.settings-input').forEach(el => el.addEventListener('change', saveSettings));
+        // Setup after DOM is thoroughly loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Attach listeners
+            document.querySelectorAll('.settings-input').forEach(el => el.addEventListener('change', saveSettings));
 
-        // Initial Load
-        const currentCfg = loadSettings();
-        updateSettingsUI(currentCfg);
-        applySettings(currentCfg);
+            // Initial Load
+            const currentCfg = loadSettings();
+            updateSettingsUI(currentCfg);
+            applySettings(currentCfg);
+        });
 
     </script>
 

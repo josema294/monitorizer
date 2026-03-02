@@ -145,11 +145,12 @@
     <!-- Header -->
     <header class="flex justify-between items-center p-3 sm:px-5 bg-b_panel/50 border-b border-b_border shrink-0">
         <div>
-            <h1 class="text-b_accent_magenta text-lg font-bold inline">Wtop</h1>
-            <span id="app-version" class="text-b_muted text-xs ml-2">... (Rust)</span>
+            <h1 class="text-b_accent_magenta text-lg font-bold inline" data-i18n="header.title">Wtop</h1>
+            <span id="app-version" class="text-b_muted text-xs ml-2" data-i18n="header.rust">... (Rust)</span>
         </div>
         <div class="hidden sm:block text-b_accent_blue text-xs">
-            <span id="hostname">Loading...</span> | <span id="os-distro"></span> | Uptime: <span id="uptime"></span>
+            <span id="hostname" data-i18n="header.loading">Loading...</span> | <span id="os-distro"></span> | <span
+                data-i18n="header.uptime">Uptime:</span> <span id="uptime"></span>
         </div>
         <div class="flex items-center gap-2 text-xs">
             <!-- Settings Toggle -->
@@ -159,7 +160,7 @@
                 ⚙️
             </button>
             <div id="status-dot" class="w-2.5 h-2.5 rounded-full bg-b_accent_red shadow-[0_0_8px_#f7768e]"></div>
-            <span id="status-text">Disconnected</span>
+            <span id="status-text" data-i18n="header.disconnected">Disconnected</span>
         </div>
     </header>
 
@@ -174,26 +175,26 @@
                 onclick="togglePanel('panel-cpu')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
-                    <h2 class="text-b_accent_cyan tracking-wider font-semibold">CPU</h2>
+                    <h2 class="text-b_accent_cyan tracking-wider font-semibold" data-i18n="panel.cpu.title">CPU</h2>
                 </div>
                 <span id="cpu-name" class="text-[10px] text-b_muted truncate ml-2 max-w-[150px]"></span>
             </div>
             <div class="panel-content p-4 flex flex-col flex-1 gap-4">
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                     <div>
-                        <span class="text-b_muted text-xs">Load</span>
+                        <span class="text-b_muted text-xs" data-i18n="panel.cpu.usage">Load</span>
                         <div id="cpu-load" class="text-xl sm:text-2xl text-b_accent_yellow font-bold mt-1">0.0%</div>
                     </div>
                     <div>
-                        <span class="text-b_muted text-xs">Avg Freq</span>
+                        <span class="text-b_muted text-xs" data-i18n="panel.cpu.freq">Avg Freq</span>
                         <div id="cpu-freq" class="text-xl sm:text-2xl text-b_accent_cyan font-bold mt-1">0.0 GHz</div>
                     </div>
                     <div>
-                        <span class="text-b_muted text-xs">Temp</span>
+                        <span class="text-b_muted text-xs" data-i18n="panel.cpu.temp">Temp</span>
                         <div id="cpu-temp" class="text-xl sm:text-2xl text-b_accent_red font-bold mt-1">0°C</div>
                     </div>
                     <div>
-                        <span class="text-b_muted text-xs">Power</span>
+                        <span class="text-b_muted text-xs" data-i18n="panel.cpu.power">Power</span>
                         <div id="cpu-power" class="text-xl sm:text-2xl text-b_accent_green font-bold mt-1">0W</div>
                     </div>
                 </div>
@@ -211,14 +212,14 @@
                 onclick="togglePanel('panel-mem')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
-                    <h2 class="text-b_accent_cyan tracking-wider font-semibold">MEMORY</h2>
+                    <h2 class="text-b_accent_cyan tracking-wider font-semibold" data-i18n="panel.mem.title">MEMORY</h2>
                 </div>
             </div>
             <div class="panel-content p-4 flex flex-col flex-1 justify-center gap-5">
                 <!-- RAM -->
                 <div>
                     <div class="flex justify-between mb-1 text-xs">
-                        <span class="text-b_accent_magenta font-bold">RAM</span>
+                        <span class="text-b_accent_magenta font-bold" data-i18n="panel.mem.usage">RAM</span>
                         <span class="text-b_text"><span id="ram-used">0</span> / <span id="ram-total">0</span>
                             GiB</span>
                     </div>
@@ -230,7 +231,7 @@
                 <!-- Swap -->
                 <div>
                     <div class="flex justify-between mb-1 text-xs">
-                        <span class="text-b_accent_yellow font-bold">SWAP</span>
+                        <span class="text-b_accent_yellow font-bold" data-i18n="panel.mem.swap">SWAP</span>
                         <span class="text-b_text"><span id="swap-used">0</span> / <span id="swap-total">0</span>
                             GiB</span>
                     </div>
@@ -249,26 +250,28 @@
                 onclick="togglePanel('panel-net')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
-                    <h2 class="text-b_accent_cyan tracking-wider font-semibold">NET & DISK</h2>
+                    <h2 class="text-b_accent_cyan tracking-wider font-semibold" data-i18n="panel.net.title">NET & DISK
+                    </h2>
                 </div>
             </div>
             <div class="panel-content p-4 flex flex-col flex-1 justify-center gap-6">
 
                 <!-- Network Stats -->
                 <div>
-                    <div class="text-xs text-b_muted mb-2 tracking-wide uppercase font-semibold">Network</div>
+                    <div class="text-xs text-b_muted mb-2 tracking-wide uppercase font-semibold"
+                        data-i18n="panel.net.title">Network</div>
                     <div class="flex flex-row items-center justify-around">
                         <div class="flex items-center gap-3">
                             <span class="text-3xl text-b_accent_cyan">▼</span>
                             <div class="flex flex-col">
-                                <span class="text-b_muted text-xs">Download</span>
+                                <span class="text-b_muted text-xs" data-i18n="panel.net.recv">Download</span>
                                 <span id="net-down" class="text-lg font-bold text-b_text">0 B/s</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="text-3xl text-b_accent_magenta">▲</span>
                             <div class="flex flex-col">
-                                <span class="text-b_muted text-xs">Upload</span>
+                                <span class="text-b_muted text-xs" data-i18n="panel.net.send">Upload</span>
                                 <span id="net-up" class="text-lg font-bold text-b_text">0 B/s</span>
                             </div>
                         </div>
@@ -279,19 +282,22 @@
 
                 <!-- Disk IO Stats -->
                 <div>
-                    <div class="text-xs text-b_muted mb-2 tracking-wide uppercase font-semibold">Disk I/O</div>
+                    <div class="text-xs text-b_muted mb-2 tracking-wide uppercase font-semibold"
+                        data-i18n="panel.disk.title">Disk I/O</div>
                     <div class="flex flex-row items-center justify-around">
                         <div class="flex items-center gap-3">
                             <span class="text-3xl text-b_accent_green">▼</span>
                             <div class="flex flex-col">
-                                <span class="text-b_muted text-[10px] sm:text-xs">Read</span>
+                                <span class="text-b_muted text-[10px] sm:text-xs"
+                                    data-i18n="panel.disk.read">Read</span>
                                 <span id="disk-read" class="text-base sm:text-lg font-bold text-b_text">0 B/s</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="text-3xl text-b_accent_yellow">▲</span>
                             <div class="flex flex-col">
-                                <span class="text-b_muted text-[10px] sm:text-xs">Write</span>
+                                <span class="text-b_muted text-[10px] sm:text-xs"
+                                    data-i18n="panel.disk.write">Write</span>
                                 <span id="disk-write" class="text-base sm:text-lg font-bold text-b_text">0 B/s</span>
                             </div>
                         </div>
@@ -308,15 +314,16 @@
                 onclick="togglePanel('panel-gpu')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
-                    <h2 class="text-b_accent_cyan tracking-wider font-semibold">GPU</h2>
+                    <h2 class="text-b_accent_cyan tracking-wider font-semibold" data-i18n="panel.gpu.title">GPU</h2>
                 </div>
-                <span id="gpu-name" class="text-[10px] text-b_muted truncate ml-2 max-w-[150px]">No GPU Detected</span>
+                <span id="gpu-name" class="text-[10px] text-b_muted truncate ml-2 max-w-[150px]"
+                    data-i18n="panel.gpu.none">No GPU Detected</span>
             </div>
             <div id="gpu-content" class="panel-content p-4 flex flex-col gap-4 opacity-50 flex-1">
                 <!-- GPU Usage Row -->
                 <div class="flex flex-col gap-2">
                     <div class="flex justify-between items-end">
-                        <span class="text-b_text font-bold text-xs">Utilization</span>
+                        <span class="text-b_text font-bold text-xs" data-i18n="panel.gpu.usage">Utilization</span>
                         <div class="flex gap-3 text-xs">
                             <span id="gpu-temp" class="text-b_accent_red font-bold">0°C</span>
                             <span id="gpu-power" class="text-b_accent_yellow font-bold">0W</span>
@@ -334,10 +341,11 @@
                 <!-- VRAM Section -->
                 <div class="flex flex-col gap-2">
                     <div class="flex justify-between items-end">
-                        <span class="text-b_text font-bold text-xs uppercase tracking-tight">VRAM</span>
+                        <span class="text-b_text font-bold text-xs uppercase tracking-tight"
+                            data-i18n="panel.gpu.vram">VRAM</span>
                         <div class="flex gap-2 text-[10px] items-baseline">
                             <span id="gpu-vram-perc" class="text-b_accent_magenta font-bold text-sm">0%</span>
-                            <span class="text-b_muted">Used</span>
+                            <span class="text-b_muted" data-i18n="panel.gpu.usage">Used</span>
                         </div>
                     </div>
                     <div class="w-full h-3 bg-b_bg rounded-full border border-b_border overflow-hidden">
@@ -345,7 +353,8 @@
                             style="width: 0%"></div>
                     </div>
                     <div class="flex justify-between text-[10px] text-b_muted font-mono">
-                        <div>Used: <span id="gpu-vram-used" class="text-b_text">0</span> GiB</div>
+                        <div><span data-i18n="panel.gpu.usage">Used</span>: <span id="gpu-vram-used"
+                                class="text-b_text">0</span> GiB</div>
                         <div>Total: <span id="gpu-vram-total" class="text-b_text">0</span> GiB</div>
                     </div>
                 </div>
@@ -359,7 +368,8 @@
                 onclick="togglePanel('panel-proc')">
                 <div class="flex items-center gap-2">
                     <span class="toggle-btn text-b_muted">▼</span>
-                    <h2 class="text-b_accent_cyan tracking-wider font-semibold">PROCESSES</h2>
+                    <h2 class="text-b_accent_cyan tracking-wider font-semibold" data-i18n="panel.proc.title">PROCESSES
+                    </h2>
                 </div>
                 <div id="proc-count" class="text-[10px] text-b_muted">Processes</div>
             </div>
@@ -369,15 +379,20 @@
                         class="sticky top-0 bg-b_panel text-b_accent_blue border-b border-b_border text-[10px] sm:text-xs">
                         <tr>
                             <th class="px-3 py-2 font-normal cursor-pointer hover:bg-b_border/30"
-                                onclick="setSort('pid')">PID <span id="sort-pid"></span></th>
+                                onclick="setSort('pid')"><span data-i18n="panel.proc.pid">PID</span> <span
+                                    id="sort-pid"></span></th>
                             <th class="px-3 py-2 font-normal cursor-pointer hover:bg-b_border/30"
-                                onclick="setSort('user')">USER <span id="sort-user"></span></th>
+                                onclick="setSort('user')"><span data-i18n="panel.proc.user">USER</span> <span
+                                    id="sort-user"></span></th>
                             <th class="px-3 py-2 font-normal cursor-pointer hover:bg-b_border/30"
-                                onclick="setSort('cpu_usage')">CPU% <span id="sort-cpu_usage"></span></th>
+                                onclick="setSort('cpu_usage')"><span data-i18n="panel.proc.cpu">CPU%</span> <span
+                                    id="sort-cpu_usage"></span></th>
                             <th class="px-3 py-2 font-normal cursor-pointer hover:bg-b_border/30"
-                                onclick="setSort('mem_usage')">MEM <span id="sort-mem_usage"></span></th>
+                                onclick="setSort('mem_usage')"><span data-i18n="panel.proc.mem">MEM</span> <span
+                                    id="sort-mem_usage"></span></th>
                             <th class="px-3 py-2 font-normal w-full cursor-pointer hover:bg-b_border/30"
-                                onclick="setSort('name')">NAME <span id="sort-name"></span></th>
+                                onclick="setSort('name')"><span data-i18n="panel.proc.command">NAME</span> <span
+                                    id="sort-name"></span></th>
                         </tr>
                     </thead>
                     <tbody id="proc-body" class="text-xs">
@@ -689,7 +704,28 @@
             visibility: { cpu: true, mem: true, net: true, gpu: true, proc: true },
             theme: 'default', // default | light
             sampleRate: 1000,
-            compact: false
+            compact: false,
+            language: 'en'
+        };
+
+        let localesData = {};
+        const loadLocales = async () => {
+            try {
+                const res = await fetch('locales.json');
+                localesData = await res.json();
+            } catch (e) {
+                console.error("Failed to load locales", e);
+            }
+        };
+
+        const applyTranslations = (lang) => {
+            if (!localesData[lang]) return;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (localesData[lang][key]) {
+                    el.textContent = localesData[lang][key];
+                }
+            });
         };
 
         const loadSettings = () => {
@@ -711,6 +747,7 @@
             document.getElementById('theme-select').value = cfg.theme;
             document.getElementById('sample-rate').value = cfg.sampleRate;
             document.getElementById('opt-compact').checked = cfg.compact;
+            document.getElementById('lang-select').value = cfg.language || 'en';
         };
 
         const applySettings = (cfg) => {
@@ -740,6 +777,9 @@
                 main.classList.replace('gap-2', 'gap-4');
                 main.classList.replace('p-2', 'p-5');
             }
+
+            // Apply Language
+            applyTranslations(cfg.language || 'en');
         };
 
         const saveSettings = () => {
@@ -753,7 +793,8 @@
                 },
                 theme: document.getElementById('theme-select').value,
                 sampleRate: parseInt(document.getElementById('sample-rate').value) || 1000,
-                compact: document.getElementById('opt-compact').checked
+                compact: document.getElementById('opt-compact').checked,
+                language: document.getElementById('lang-select').value || 'en'
             };
             localStorage.setItem(SETTINGS_KEY, JSON.stringify(cfg));
             applySettings(cfg);
@@ -772,7 +813,10 @@
         };
 
         // Setup after DOM is thoroughly loaded
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Fetch Locales
+            await loadLocales();
+
             // Attach listeners
             document.querySelectorAll('.settings-input').forEach(el => el.addEventListener('change', saveSettings));
 
@@ -791,7 +835,8 @@
             class="bg-b_panel border border-b_border rounded-lg shadow-2xl w-full max-w-xl max-h-[80vh] flex flex-col overflow-hidden">
 
             <div class="flex justify-between items-center p-4 border-b border-b_border">
-                <h2 class="text-lg font-bold text-b_accent_magenta tracking-wide">⚙️ Settings</h2>
+                <h2 class="text-lg font-bold text-b_accent_magenta tracking-wide" data-i18n="settings.title">⚙️ Settings
+                </h2>
                 <button onclick="document.getElementById('settings-modal').classList.remove('show')"
                     class="text-b_muted hover:text-b_accent_red text-lg">&times;</button>
             </div>
@@ -802,65 +847,93 @@
                 <nav
                     class="w-full sm:w-1/3 border-b sm:border-b-0 sm:border-r border-b_border bg-[#1a1b26]/50 flex flex-row sm:flex-col overflow-x-auto text-sm">
                     <button data-target="tab-menu" onclick="switchTab('tab-menu')"
-                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_text whitespace-nowrap text-b_accent_cyan border-b-2 sm:border-b-0 border-b_accent_cyan sm:border-r-2 transition-colors">Menú
+                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_text whitespace-nowrap text-b_accent_cyan border-b-2 sm:border-b-0 border-b_accent_cyan sm:border-r-2 transition-colors"
+                        data-i18n="settings.tab.menu">Menú
                         Visibilidad</button>
                     <button data-target="tab-style" onclick="switchTab('tab-style')"
-                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_muted whitespace-nowrap transition-colors">Estilos</button>
+                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_muted whitespace-nowrap transition-colors"
+                        data-i18n="settings.tab.style">Estilos</button>
                     <button data-target="tab-monitor" onclick="switchTab('tab-monitor')"
-                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_muted whitespace-nowrap transition-colors">Monitorización</button>
+                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_muted whitespace-nowrap transition-colors"
+                        data-i18n="settings.tab.monitor">Monitorización</button>
                     <button data-target="tab-other" onclick="switchTab('tab-other')"
-                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_muted whitespace-nowrap transition-colors">Otros</button>
+                        class="settings-tab-btn px-4 py-3 text-left hover:bg-b_border/20 text-b_muted whitespace-nowrap transition-colors"
+                        data-i18n="settings.tab.other">Otros</button>
                 </nav>
 
                 <!-- Tab Contents -->
                 <div class="p-5 flex-1 overflow-y-auto text-sm">
 
                     <div id="tab-menu" class="settings-content flex flex-col gap-3">
-                        <h3 class="text-b_accent_cyan font-bold mb-2">Panel Visibility</h3>
+                        <h3 class="text-b_accent_cyan font-bold mb-2" data-i18n="settings.vis.title">Panel Visibility
+                        </h3>
                         <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-cpu"
-                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo CPU</label>
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> <span
+                                data-i18n="settings.vis.cpu">Módulo CPU</span></label>
                         <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-mem"
-                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo
-                            Memoria</label>
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> <span
+                                data-i18n="settings.vis.mem">Módulo
+                                Memoria</span></label>
                         <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-net"
-                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo
-                            Red/Disco</label>
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> <span
+                                data-i18n="settings.vis.net">Módulo
+                                Red/Disco</span></label>
                         <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-gpu"
-                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo GPU</label>
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> <span
+                                data-i18n="settings.vis.gpu">Módulo GPU</span></label>
                         <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="vis-proc"
-                                class="settings-input rounded border-b_border text-b_accent_cyan"> Módulo
-                            Procesos</label>
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> <span
+                                data-i18n="settings.vis.proc">Módulo
+                                Procesos</span></label>
                     </div>
 
                     <div id="tab-style" class="settings-content hidden flex flex-col gap-4">
-                        <h3 class="text-b_accent_cyan font-bold mb-2">Appearance</h3>
+                        <h3 class="text-b_accent_cyan font-bold mb-2" data-i18n="settings.style.title">Appearance</h3>
                         <div>
-                            <label class="block text-b_muted text-xs mb-1">Theme</label>
+                            <label class="block text-b_muted text-xs mb-1"
+                                data-i18n="settings.style.theme_label">Theme</label>
                             <select id="theme-select"
                                 class="settings-input w-full bg-b_bg border border-b_border text-b_text rounded px-3 py-2 outline-none">
-                                <option value="default">Default Dark (Tokyo Night)</option>
-                                <option value="light">Light Mode (Base)</option>
+                                <option value="default" data-i18n="settings.style.theme_dark">Default Dark (Tokyo Night)
+                                </option>
+                                <option value="light" data-i18n="settings.style.theme_light">Light Mode (Base)</option>
                             </select>
                         </div>
                     </div>
 
                     <div id="tab-monitor" class="settings-content hidden flex flex-col gap-4">
-                        <h3 class="text-b_accent_cyan font-bold mb-2">Data Polling</h3>
+                        <h3 class="text-b_accent_cyan font-bold mb-2" data-i18n="settings.monitor.title">Data Polling
+                        </h3>
                         <div>
-                            <label class="block text-b_muted text-xs mb-1">Frontend Update Interval (ms)</label>
+                            <label class="block text-b_muted text-xs mb-1"
+                                data-i18n="settings.monitor.interval">Frontend Update Interval (ms)</label>
                             <input type="number" id="sample-rate"
                                 class="settings-input w-full bg-b_bg border border-b_border text-b_text rounded px-3 py-2 outline-none"
                                 min="500" max="10000" step="100">
-                            <p class="text-[10px] text-b_muted mt-1">Changes are client-side. The backend streams data
+                            <p class="text-[10px] text-b_muted mt-1" data-i18n="settings.monitor.desc">Changes are
+                                client-side. The backend streams data
                                 independently over SSE.</p>
                         </div>
                     </div>
 
                     <div id="tab-other" class="settings-content hidden flex flex-col gap-3">
-                        <h3 class="text-b_accent_cyan font-bold mb-2">Miscellaneous UI Options</h3>
+                        <h3 class="text-b_accent_cyan font-bold mb-2" data-i18n="settings.other.title">Miscellaneous UI
+                            Options</h3>
+
+                        <div>
+                            <label class="block text-b_muted text-xs mb-1"
+                                data-i18n="settings.lang.label">Language</label>
+                            <select id="lang-select"
+                                class="settings-input w-full bg-b_bg border border-b_border text-b_text rounded px-3 py-2 outline-none mb-3">
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                            </select>
+                        </div>
+
                         <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="opt-compact"
-                                class="settings-input rounded border-b_border text-b_accent_cyan"> Modo Compacto (reduce
-                            márgenes)</label>
+                                class="settings-input rounded border-b_border text-b_accent_cyan"> <span
+                                data-i18n="settings.other.compact">Modo Compacto (reduce
+                                márgenes)</span></label>
                     </div>
 
                 </div>

@@ -11,16 +11,14 @@ use axum::{
 };
 use futures::stream::Stream;
 use nvml_wrapper::Nvml;
-use rust_embed::RustEmbed;
 use serde::Serialize;
 use std::{convert::Infallible, fs, sync::Arc, time::Duration};
 use sysinfo::{Networks, System};
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 
-#[derive(RustEmbed)]
-#[folder = "static/"]
-struct Asset;
+const INDEX_HTML: &[u8] = include_bytes!("../static/index.html");
+const LOCALES_JSON: &[u8] = include_bytes!("../static/locales.json");
 
 #[derive(Serialize, Clone, Debug)]
 pub struct SystemMetrics {
@@ -445,27 +443,23 @@ async fn version_handler() -> &'static str {
 }
 
 async fn static_handler(uri: Uri) -> impl IntoResponse {
-    let mut path = uri.path().trim_start_matches('/').to_string();
+    let path = uri.path().trim_start_matches('/');
 
-    if path.is_empty() {
-        path = "index.html".to_string();
+    if path.is_empty() || path == "index.html" {
+        return Response::builder()
+            .header(header::CONTENT_TYPE, "text/html")
+            .body(Body::from(INDEX_HTML))
+            .unwrap()
+            .into_response();
     }
 
-    match Asset::get(path.as_str()) {
-        Some(content) => {
-            let mime = mime_guess::from_path(&path).first_or_octet_stream();
-            Response::builder()
-                .header(header::CONTENT_TYPE, mime.as_ref())
-                .body(Body::from(content.data))
-                .unwrap()
-                .into_response()
-        }
-        None => {
-            if path == "index.html" {
-                (StatusCode::NOT_FOUND, "index.html not found").into_response()
-            } else {
-                (StatusCode::NOT_FOUND, "404 Not Found").into_response()
-            }
-        }
+    if path == "locales.json" {
+        return Response::builder()
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(LOCALES_JSON))
+            .unwrap()
+            .into_response();
     }
+
+    (StatusCode::NOT_FOUND, "404 Not Found").into_response()
 }
